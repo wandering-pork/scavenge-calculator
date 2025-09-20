@@ -210,9 +210,9 @@
                 // Solve for capacity given target duration
                 const baseDuration = (targetDuration * 3600) / durationFactor - 1800;
                 if (baseDuration > 0) {
-                    // baseDuration = sqrt(capacity * 100 * ratio^2) * 100
-                    // capacity = (baseDuration / 100)^2 / (100 * ratio^2)
-                    const capacity = Math.pow(baseDuration / 100, 2) / (100 * Math.pow(scavenge.ratio, 2));
+                    // baseDuration = (capacity^2 * 100 * ratio^2)^0.45
+                    // capacity = sqrt((baseDuration)^(1/0.45) / (100 * ratio^2))
+                    const capacity = Math.sqrt(Math.pow(baseDuration, 1/0.45) / (100 * Math.pow(scavenge.ratio, 2)));
                     distribution[i] = Math.min(capacity, totalCapacity / scavenges.length);
                 }
             });
@@ -236,9 +236,9 @@
             
             if (baseDuration <= 0) return 0;
             
-            // Solve: baseDuration = sqrt(capacity * 100 * ratio^2) * 100
-            // Therefore: capacity = (baseDuration / 100)^2 / (100 * ratio^2)
-            const maxCapacity = Math.pow(baseDuration / 100, 2) / (100 * Math.pow(ratio, 2));
+            // Solve: baseDuration = (capacity^2 * 100 * ratio^2)^0.45
+            // Therefore: capacity = sqrt((baseDuration)^(1/0.45) / (100 * ratio^2))
+            const maxCapacity = Math.sqrt(Math.pow(baseDuration, 1/0.45) / (100 * Math.pow(ratio, 2)));
             
             return Math.min(capacity, maxCapacity);
         },
@@ -246,52 +246,29 @@
         _calculateEfficiency(capacity, ratio, durationFactor) {
             if (capacity === 0) return null;
             
-            // DEBUG: Log values to understand the formula
-            console.log('Calculating efficiency:', {
-                capacity,
-                ratio,
-                durationFactor,
-                worldSpeed: 1 / Math.pow(durationFactor, 1/0.55)
-            });
-            
-            // Try different duration formulas to match game results
-            // Test case: 375 capacity, 0.75 ratio should give ~3071 seconds (51:11)
-            
-            // Formula attempt 1: Original TW formula research
-            let baseDuration = Math.sqrt(capacity * 100 * Math.pow(ratio, 2)) * 100 + 1800;
-            console.log('Formula 1 (sqrt):', baseDuration, 'seconds =', Math.floor(baseDuration/60), 'minutes');
-            
-            // Formula attempt 2: Different power
-            let baseDuration2 = Math.pow(capacity * 100 * Math.pow(ratio, 2), 0.5) * 50 + 1800;
-            console.log('Formula 2 (power 0.5):', baseDuration2, 'seconds =', Math.floor(baseDuration2/60), 'minutes');
-            
-            // Formula attempt 3: Linear relationship
-            let baseDuration3 = capacity * ratio * 100 + 1800;
-            console.log('Formula 3 (linear):', baseDuration3, 'seconds =', Math.floor(baseDuration3/60), 'minutes');
-            
-            // Formula attempt 4: Simpler sqrt
-            let baseDuration4 = Math.sqrt(capacity * ratio * 10000) + 1800;
-            console.log('Formula 4 (simple sqrt):', baseDuration4, 'seconds =', Math.floor(baseDuration4/60), 'minutes');
-            
-            // Use formula that's closest to expected 3071 seconds
-            const duration = baseDuration4 * durationFactor;
+            // Correct Tribal Wars formulas from official calculator
+            // Duration: ((capacity^2 * 100 * ratio^2)^0.45 + 1800) * durationFactor
+            const baseDuration = Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45) + 1800;
+            const duration = baseDuration * durationFactor;
             const durationHours = duration / 3600;
             
-            // Resources calculation - also debug this
+            // Resources: capacity * ratio (total), then split into 3 types
             const totalResources = capacity * ratio;
-            console.log('Total resources calc:', totalResources);
+            const resourcesPerType = Math.floor(totalResources / 3);
+            const remainder = totalResources - (resourcesPerType * 3);
             
-            // Try different resource splits
-            const split1 = Math.floor(totalResources / 3);
-            const remainder = totalResources - (split1 * 3);
+            // Distribute remainder: wood gets first extra, clay gets second extra
+            const wood = resourcesPerType + (remainder >= 1 ? 1 : 0);
+            const clay = resourcesPerType + (remainder >= 2 ? 1 : 0);
+            const iron = resourcesPerType;
             
             return {
-                wood: split1 + (remainder >= 1 ? 1 : 0),
-                clay: split1 + (remainder >= 2 ? 1 : 0), 
-                iron: split1,
-                total: totalResources,
+                wood: wood,
+                clay: clay,
+                iron: iron,
+                total: wood + clay + iron,
                 duration: durationHours,
-                efficiency: totalResources / durationHours
+                efficiency: (wood + clay + iron) / durationHours
             };
         },
         

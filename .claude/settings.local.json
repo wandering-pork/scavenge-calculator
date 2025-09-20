@@ -9,7 +9,8 @@
       "Bash(git push:*)",
       "Bash(git remote set-url:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:daniel.dmvandenberg.nl)"
     ],
     "deny": [],
     "ask": []
