@@ -109,26 +109,33 @@
 
     // === OPTIMIZATION CALCULATOR ===
     const Calculator = {
-        optimize(userTroops, worldSpeed, mode = 'per-hour') {
+        optimize(userTroops, worldSpeed, mode = 'per-hour', selectedLevels = [1,2,3,4], maxDuration = null) {
             const totalCapacity = this._calculateCapacity(userTroops);
             const durationFactor = Math.pow(worldSpeed, -0.55);
-            const availableScavenges = GameData.getScavenges();
+            const allScavenges = GameData.getScavenges();
+            
+            // Filter scavenges to only include selected levels
+            const availableScavenges = allScavenges.filter(s => selectedLevels.includes(s.level));
+            
+            if (availableScavenges.length === 0) {
+                return [];
+            }
             
             let distribution;
             switch (mode) {
                 case 'per-run':
-                    distribution = this._optimizeForMaxResources(totalCapacity, availableScavenges, durationFactor);
+                    distribution = this._optimizeForMaxResources(totalCapacity, availableScavenges, durationFactor, maxDuration);
                     break;
                 case 'equal-duration':
-                    distribution = this._optimizeForEqualDuration(totalCapacity, availableScavenges, durationFactor);
+                    distribution = this._optimizeForEqualDuration(totalCapacity, availableScavenges, durationFactor, maxDuration);
                     break;
                 case 'per-hour':
                 default:
-                    distribution = this._optimizeForEfficiency(totalCapacity, availableScavenges, durationFactor);
+                    distribution = this._optimizeForEfficiency(totalCapacity, availableScavenges, durationFactor, maxDuration);
                     break;
             }
             
-            return this._convertToResults(distribution, availableScavenges, userTroops, durationFactor);
+            return this._convertToResults(distribution, availableScavenges, userTroops, durationFactor, maxDuration);
         },
         
         _calculateCapacity(troops) {
@@ -137,22 +144,28 @@
             }, 0);
         },
         
-        _optimizeForEfficiency(totalCapacity, scavenges, durationFactor) {
+        _optimizeForEfficiency(totalCapacity, scavenges, durationFactor, maxDuration = null) {
             // Prioritize highest efficiency (resources per hour)
             const distribution = new Array(scavenges.length).fill(0);
             let remaining = totalCapacity;
             
             // Start from highest efficiency (level 4) and work down
             for (let i = scavenges.length - 1; i >= 0 && remaining > 0; i--) {
-                const optimalCapacity = Math.min(remaining, remaining / (scavenges.length - i));
-                distribution[i] = optimalCapacity;
-                remaining -= optimalCapacity;
+                let allocation = Math.min(remaining, remaining / (scavenges.length - i));
+                
+                // Apply time constraint if specified
+                if (maxDuration) {
+                    allocation = this._limitByDuration(allocation, scavenges[i].ratio, durationFactor, maxDuration);
+                }
+                
+                distribution[i] = allocation;
+                remaining -= allocation;
             }
             
             return distribution;
         },
         
-        _optimizeForMaxResources(totalCapacity, scavenges, durationFactor) {
+        _optimizeForMaxResources(totalCapacity, scavenges, durationFactor, maxDuration = null) {
             // Prioritize maximum total resources per run
             const distribution = new Array(scavenges.length).fill(0);
             let remaining = totalCapacity;
@@ -164,21 +177,26 @@
             
             for (const { index } of sortedIndexes) {
                 if (remaining <= 0) break;
-                const allocated = Math.min(remaining, totalCapacity / scavenges.length);
-                distribution[index] = allocated;
-                remaining -= allocated;
+                let allocation = Math.min(remaining, totalCapacity / scavenges.length);
+                
+                // Apply time constraint if specified
+                if (maxDuration) {
+                    allocation = this._limitByDuration(allocation, scavenges[index].ratio, durationFactor, maxDuration);
+                }
+                
+                distribution[index] = allocation;
+                remaining -= allocation;
             }
             
             return distribution;
         },
         
-        _optimizeForEqualDuration(totalCapacity, scavenges, durationFactor) {
+        _optimizeForEqualDuration(totalCapacity, scavenges, durationFactor, maxDuration = null) {
             // Make all scavenges finish at approximately the same time
             const distribution = new Array(scavenges.length).fill(0);
             
-            // Calculate capacity needed for each level to achieve equal duration
-            // Duration formula: (capacity^2 * 100 * ratio^2)^0.45 + 1800) * durationFactor
-            const targetDuration = 2; // Target 2 hours as baseline
+            // Use provided max duration or default to 2 hours
+            const targetDuration = maxDuration || 2;
             
             scavenges.forEach((scavenge, i) => {
                 // Solve for capacity given target duration
@@ -199,6 +217,19 @@
             }
             
             return distribution;
+        },
+        
+        _limitByDuration(capacity, ratio, durationFactor, maxDurationHours) {
+            // Calculate what capacity would give us the max duration
+            const maxDurationSeconds = maxDurationHours * 3600;
+            const baseDuration = maxDurationSeconds / durationFactor - 1800;
+            
+            if (baseDuration <= 0) return 0;
+            
+            // Solve: baseDuration = (capacity^2 * 100 * ratio^2)^0.45
+            const maxCapacity = Math.pow(baseDuration / (100 * Math.pow(ratio, 2)), 1/0.9);
+            
+            return Math.min(capacity, maxCapacity);
         },
         
         _calculateEfficiency(capacity, ratio, durationFactor) {
@@ -317,6 +348,42 @@
                     </div>
 
                     <div class="calc-section">
+                        <h3>Time Constraint</h3>
+                        <div class="time-constraint">
+                            <label>
+                                <input type="checkbox" id="enable-time-limit">
+                                <span>Maximum duration:</span>
+                            </label>
+                            <div class="time-inputs">
+                                <input type="number" id="max-hours" min="0" max="23" value="2" disabled> hours
+                                <input type="number" id="max-minutes" min="0" max="59" value="0" disabled> minutes
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="calc-section">
+                        <h3>Scavenge Levels to Include</h3>
+                        <div class="scavenge-levels">
+                            <label class="level-option">
+                                <input type="checkbox" name="scavenge-levels" value="1" checked>
+                                <span>Level 1 (10% efficiency)</span>
+                            </label>
+                            <label class="level-option">
+                                <input type="checkbox" name="scavenge-levels" value="2" checked>
+                                <span>Level 2 (25% efficiency)</span>
+                            </label>
+                            <label class="level-option">
+                                <input type="checkbox" name="scavenge-levels" value="3" checked>
+                                <span>Level 3 (50% efficiency)</span>
+                            </label>
+                            <label class="level-option">
+                                <input type="checkbox" name="scavenge-levels" value="4" checked>
+                                <span>Level 4 (75% efficiency)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="calc-section">
                         <h3>Troops to Send</h3>
                         <div class="troop-grid" id="troop-inputs"></div>
                     </div>
@@ -340,23 +407,35 @@
                 .scavenge-calc { 
                     background: #f4e4bc; 
                     border: 2px solid #7d510f; 
-                    border-radius: 8px;
                     margin: 20px 0; 
                     font: 11px Verdana; 
                     max-width: 800px;
+                    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
                 }
                 
                 .calc-header {
-                    background: #c1a264; 
+                    background: linear-gradient(to bottom, #c1a264, #b8956a); 
                     padding: 12px 16px; 
-                    border-bottom: 1px solid #7d510f;
-                    border-radius: 6px 6px 0 0;
+                    border-bottom: 2px solid #7d510f;
+                    position: relative;
+                }
+                
+                .calc-header::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 1px;
+                    background: linear-gradient(to right, transparent, #fff, transparent);
+                    opacity: 0.3;
                 }
                 
                 .calc-header h2 {
                     margin: 0 0 8px 0;
                     font-size: 16px;
                     color: #2c1810;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
                 }
                 
                 .calc-info {
@@ -366,45 +445,74 @@
                 
                 .calc-content {
                     padding: 16px;
+                    background: #f4e4bc;
                 }
                 
                 .calc-section {
-                    margin-bottom: 20px;
-                    padding: 12px;
-                    background: #faf7f0;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    background: #ebe3c7;
+                    border: 1px solid #a08c50;
+                    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
                 }
                 
                 .calc-section h3 {
-                    margin: 0 0 12px 0;
+                    margin: 0 0 10px 0;
                     font-size: 13px;
                     color: #2c1810;
-                    border-bottom: 1px solid #c1a264;
-                    padding-bottom: 4px;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
                 }
                 
-                .optimization-modes {
+                .optimization-modes, .scavenge-levels {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                
+                .mode-option, .level-option {
+                    display: flex;
+                    align-items: center;
+                    cursor: pointer;
+                    padding: 4px 6px;
+                    background: #f4e4bc;
+                    border: 1px solid transparent;
+                    transition: all 0.2s;
+                }
+                
+                .mode-option:hover, .level-option:hover {
+                    background: #e8dcc0;
+                    border-color: #c1a264;
+                }
+                
+                .mode-option input, .level-option input {
+                    margin-right: 8px;
+                }
+                
+                .time-constraint {
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
                 }
                 
-                .mode-option {
+                .time-inputs {
                     display: flex;
                     align-items: center;
-                    cursor: pointer;
-                    padding: 6px;
-                    border-radius: 4px;
-                    transition: background-color 0.2s;
+                    gap: 8px;
+                    margin-left: 20px;
                 }
                 
-                .mode-option:hover {
-                    background-color: #e8f4f8;
+                .time-inputs input {
+                    width: 50px;
+                    padding: 2px 4px;
+                    border: 1px solid #a08c50;
+                    background: #f4e4bc;
+                    font: 11px Verdana;
                 }
                 
-                .mode-option input[type="radio"] {
-                    margin-right: 8px;
+                .time-inputs input:disabled {
+                    background: #ddd;
+                    color: #999;
                 }
                 
                 .troop-grid {
@@ -417,10 +525,10 @@
                 .troop-input { 
                     display: flex;
                     flex-direction: column;
-                    background: white;
+                    background: #ebe3c7;
                     padding: 8px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
+                    border: 1px solid #a08c50;
+                    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
                 }
                 
                 .troop-label {
@@ -428,6 +536,7 @@
                     margin-bottom: 4px;
                     color: #2c1810;
                     text-transform: capitalize;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
                 }
                 
                 .troop-input-row {
@@ -438,15 +547,22 @@
                 
                 .troop-input input {
                     flex: 1;
-                    padding: 4px 6px;
-                    border: 1px solid #ccc;
-                    border-radius: 3px;
-                    font-size: 11px;
+                    padding: 3px 5px;
+                    border: 1px solid #7d510f;
+                    background: #f4e4bc;
+                    font: 11px Verdana;
+                    box-shadow: inset 1px 1px 1px rgba(0,0,0,0.2);
+                }
+                
+                .troop-input input:focus {
+                    outline: none;
+                    border-color: #5d4037;
+                    background: #fff;
                 }
                 
                 .troop-max {
                     font-size: 9px;
-                    color: #666;
+                    color: #5d4037;
                     white-space: nowrap;
                 }
                 
@@ -457,77 +573,91 @@
                 }
                 
                 .calc-button { 
-                    padding: 10px 16px; 
-                    border: 1px solid #7d510f; 
+                    padding: 8px 12px; 
+                    border: 2px outset #c1a264; 
                     cursor: pointer; 
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    transition: all 0.2s;
+                    font: bold 11px Verdana;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
+                    transition: all 0.1s;
                 }
                 
                 .calc-button.primary {
-                    background: #4a90e2; 
-                    color: white;
+                    background: linear-gradient(to bottom, #c1a264, #b8956a);
+                    color: #2c1810;
                     flex: 1;
                 }
                 
                 .calc-button.primary:hover {
-                    background: #357abd;
+                    background: linear-gradient(to bottom, #b8956a, #a08c50);
+                }
+                
+                .calc-button.primary:active {
+                    border-style: inset;
                 }
                 
                 .calc-button.secondary {
-                    background: #c1a264; 
-                    color: #2c1810;
+                    background: linear-gradient(to bottom, #ddd, #bbb);
+                    color: #333;
+                    border-color: #999;
                 }
                 
                 .calc-button.secondary:hover {
-                    background: #a08c50;
+                    background: linear-gradient(to bottom, #ccc, #aaa);
+                }
+                
+                .calc-button.secondary:active {
+                    border-style: inset;
                 }
                 
                 .result { 
-                    background: #e8f4f8; 
-                    padding: 12px; 
-                    margin: 8px 0; 
-                    border-left: 4px solid #4a90e2;
-                    border-radius: 4px;
+                    background: #ebe3c7; 
+                    padding: 10px; 
+                    margin: 6px 0; 
+                    border: 1px solid #a08c50;
+                    box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
                 }
                 
                 .result-header {
                     font-weight: bold;
                     margin-bottom: 6px;
                     color: #2c1810;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
                 }
                 
                 .result-details {
                     font-size: 10px;
-                    color: #555;
-                    margin: 4px 0;
+                    color: #5d4037;
+                    margin: 3px 0;
                 }
                 
                 .send-btn { 
                     width: 100%; 
-                    padding: 6px; 
-                    background: #4a90e2; 
-                    color: white; 
-                    margin-top: 8px; 
-                    border: none; 
+                    padding: 4px 8px; 
+                    background: linear-gradient(to bottom, #c1a264, #b8956a);
+                    color: #2c1810; 
+                    margin-top: 6px; 
+                    border: 1px outset #c1a264; 
                     cursor: pointer; 
-                    border-radius: 3px;
-                    font-size: 11px;
+                    font: bold 10px Verdana;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
                 }
                 
                 .send-btn:hover {
-                    background: #357abd;
+                    background: linear-gradient(to bottom, #b8956a, #a08c50);
+                }
+                
+                .send-btn:active {
+                    border-style: inset;
                 }
                 
                 .results-summary {
-                    background: #f0f8ff; 
-                    padding: 12px; 
-                    margin: 12px 0; 
-                    border: 1px solid #4a90e2;
-                    border-radius: 4px;
+                    background: #f4e4bc; 
+                    padding: 10px; 
+                    margin: 10px 0; 
+                    border: 2px solid #7d510f;
                     font-weight: bold;
+                    color: #2c1810;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
                 }
             `;
             document.head.appendChild(style);
@@ -553,11 +683,40 @@
             }).join('');
             
             document.getElementById('troop-inputs').innerHTML = troopInputsHTML;
+            this._setupEventHandlers();
+        },
+        
+        _setupEventHandlers() {
+            // Time limit checkbox handler
+            const timeLimitCheckbox = document.getElementById('enable-time-limit');
+            const timeInputs = document.querySelectorAll('#max-hours, #max-minutes');
+            
+            if (timeLimitCheckbox) {
+                timeLimitCheckbox.addEventListener('change', () => {
+                    timeInputs.forEach(input => {
+                        input.disabled = !timeLimitCheckbox.checked;
+                    });
+                });
+            }
         },
         
         getOptimizationMode() {
             const selected = document.querySelector('input[name="optimization-mode"]:checked');
             return selected ? selected.value : 'per-hour';
+        },
+        
+        getTimeConstraint() {
+            const enabled = document.getElementById('enable-time-limit')?.checked;
+            if (!enabled) return null;
+            
+            const hours = parseInt(document.getElementById('max-hours')?.value) || 0;
+            const minutes = parseInt(document.getElementById('max-minutes')?.value) || 0;
+            return hours + (minutes / 60); // Return total hours
+        },
+        
+        getSelectedLevels() {
+            const checkboxes = document.querySelectorAll('input[name="scavenge-levels"]:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
         },
         
         getUserTroops() {
@@ -672,9 +831,17 @@
             return;
         }
         
+        const selectedLevels = UI.getSelectedLevels();
+        if (selectedLevels.length === 0) {
+            alert('Please select at least one scavenge level to include.');
+            return;
+        }
+        
         const worldSpeed = GameData.getWorldSpeed();
         const optimizationMode = UI.getOptimizationMode();
-        const results = Calculator.optimize(userTroops, worldSpeed, optimizationMode);
+        const timeConstraint = UI.getTimeConstraint();
+        
+        const results = Calculator.optimize(userTroops, worldSpeed, optimizationMode, selectedLevels, timeConstraint);
         UI.displayResults(results, optimizationMode);
     };
 
