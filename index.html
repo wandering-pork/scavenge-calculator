@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tribal Wars Scavenge Calculator</title>
+    <style>
+        body {
+            font-family: Verdana, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4e4bc;
+        }
+        .header {
+            text-align: center;
+            background: #c1a264;
+            padding: 20px;
+            border: 2px solid #7d510f;
+            margin-bottom: 20px;
+        }
+        .installation {
+            background: #e8f4f8;
+            padding: 15px;
+            border-left: 4px solid #4a90e2;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .feature {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .compliance {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏹 Tribal Wars Scavenge Calculator</h1>
+        <p>Optimize your scavenging for maximum resources per hour</p>
+    </div>
+
+    <div class="installation">
+        <h2>Quick Installation</h2>
+        <p><strong>Method 1: Browser Bookmark (Recommended)</strong></p>
+        <p>Copy this code and save it as a bookmark in your browser:</p>
+        <div class="code-block">
+javascript:$.getScript("https://wandering-pork.github.io/scavenge-calculator/scavenge-calculator.js")
+        </div>
+        
+        <p><strong>Method 2: Direct Script Load</strong></p>
+        <p>Copy and paste this into your browser console while on the scavenge page:</p>
+        <div class="code-block">
+$.getScript("https://wandering-pork.github.io/scavenge-calculator/scavenge-calculator.js")
+        </div>
+    </div>
+
+    <div class="compliance">
+        <h2>✅ Legal Compliance</h2>
+        <ul>
+            <li>✅ One action per click (calculate button, individual send buttons)</li>
+            <li>✅ No automation of actual scavenging</li>
+            <li>✅ Helper tool only - provides recommendations</li>
+            <li>✅ Must be approved by Tribal Wars support before use</li>
+        </ul>
+        <p><strong>Important:</strong> This tool only helps you calculate optimal troop distributions. You must manually click each "Send" button and confirm each scavenge.</p>
+    </div>
+
+    <h2>Features</h2>
+    
+    <div class="feature">
+        <h3>🎯 Smart Optimization</h3>
+        <p>Automatically calculates the best troop distribution across scavenge levels to maximize resources per hour.</p>
+    </div>
+
+    <div class="feature">
+        <h3>🏠 Auto-Detection</h3>
+        <p>Detects your world speed and available troops automatically. Shows current troop counts for easy reference.</p>
+    </div>
+
+    <div class="feature">
+        <h3>📊 Resource Breakdown</h3>
+        <p>Shows detailed resource gains (wood, clay, iron) and duration for each scavenge level.</p>
+    </div>
+
+    <div class="feature">
+        <h3>🚀 One-Click Population</h3>
+        <p>Click "Send Level X" to automatically fill the troop inputs for that scavenge level. You still need to click "Start scavenging" to confirm.</p>
+    </div>
+
+    <div class="feature">
+        <h3>📱 Clean Interface</h3>
+        <p>Minimal, non-intrusive interface that appears in the top-right corner. Easy to close when not needed.</p>
+    </div>
+
+    <h2>How to Use</h2>
+    <ol>
+        <li>Navigate to your village's scavenge page (Place → Scavenge)</li>
+        <li>Click your bookmark or run the script</li>
+        <li>Enter how many troops you want to use for scavenging</li>
+        <li>Click "Calculate Optimal"</li>
+        <li>Review the results and click "Send Level X" for each recommendation</li>
+        <li>Manually click "Start scavenging" to confirm each one</li>
+    </ol>
+
+    <h2>Technical Details</h2>
+    <p>This calculator uses a greedy optimization algorithm that prioritizes higher-efficiency scavenge levels while respecting your troop constraints. It follows clean code principles (KISS, DRY, YAGNI, SOLID) for maintainability and reliability.</p>
+
+    <h2>Support</h2>
+    <p>If you encounter any issues or have suggestions, please create an issue on the <a href="https://github.com/wandering-pork/scavenge-calculator">GitHub repository</a>.</p>
+
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; border-top: 1px solid #ddd;">
+        <p>© 2024 Tribal Wars Scavenge Calculator | <a href="https://github.com/wandering-pork/scavenge-calculator">GitHub</a></p>
+    </footer>
+</body>
+</html>

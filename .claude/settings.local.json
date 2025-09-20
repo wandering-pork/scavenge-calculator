@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh-add:*)",
+      "Read(C:\\Users\\epoy\\.ssh/**)",
+      "Read(C:\\Users\\epoy\\.ssh/**)",
+      "Bash(ssh:*)",
+      "Read(C:\\Users\\epoy\\.ssh/**)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
