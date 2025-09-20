@@ -21,7 +21,15 @@
             scavengeOptions: '.scavenge-option',
             troopInputs: 'input[name$="units"]',
             unitsDisplay: '.units-entry-all',
-            scavengeForm: (level) => `#scavenge_option_${level - 1}`,
+            scavengeForm: (level) => [
+                `#scavenge_option_${level - 1}`,
+                `#scavenge_option_${level}`,
+                `.scavenge-option:nth-child(${level})`,
+                `[data-option="${level - 1}"]`,
+                `[data-option="${level}"]`,
+                `.scavenge_${level - 1}`,
+                `.scavenge_${level}`
+            ],
             troopInput: (form, unit) => form.querySelector(`input[name="${unit}"]`)
         }
     };
@@ -202,7 +210,9 @@
                 // Solve for capacity given target duration
                 const baseDuration = (targetDuration * 3600) / durationFactor - 1800;
                 if (baseDuration > 0) {
-                    const capacity = Math.pow(baseDuration / (100 * Math.pow(scavenge.ratio, 2)), 1/0.9);
+                    // baseDuration = sqrt(capacity * 100 * ratio^2) * 100
+                    // capacity = (baseDuration / 100)^2 / (100 * ratio^2)
+                    const capacity = Math.pow(baseDuration / 100, 2) / (100 * Math.pow(scavenge.ratio, 2));
                     distribution[i] = Math.min(capacity, totalCapacity / scavenges.length);
                 }
             });
@@ -226,8 +236,9 @@
             
             if (baseDuration <= 0) return 0;
             
-            // Solve: baseDuration = (capacity^2 * 100 * ratio^2)^0.45
-            const maxCapacity = Math.pow(baseDuration / (100 * Math.pow(ratio, 2)), 1/0.9);
+            // Solve: baseDuration = sqrt(capacity * 100 * ratio^2) * 100
+            // Therefore: capacity = (baseDuration / 100)^2 / (100 * ratio^2)
+            const maxCapacity = Math.pow(baseDuration / 100, 2) / (100 * Math.pow(ratio, 2));
             
             return Math.min(capacity, maxCapacity);
         },
@@ -235,9 +246,14 @@
         _calculateEfficiency(capacity, ratio, durationFactor) {
             if (capacity === 0) return null;
             
-            const totalResources = capacity * ratio;
-            const duration = (Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45) + 1800) * durationFactor;
+            // Correct Tribal Wars scavenge formulas
+            // Duration: sqrt(capacity * 100 * ratio^2) * 100 + 1800 seconds
+            const baseDuration = Math.sqrt(capacity * 100 * Math.pow(ratio, 2)) * 100 + 1800;
+            const duration = baseDuration * durationFactor;
             const durationHours = duration / 3600;
+            
+            // Resources: capacity * ratio for total, then split equally
+            const totalResources = capacity * ratio;
             const resourcesPerType = Math.floor(totalResources / 3);
             
             return {
@@ -793,31 +809,83 @@
     const ScavengeSender = {
         send(level, troops) {
             try {
-                const form = utils.findElement(CONFIG.SELECTORS.scavengeForm(level));
+                const form = this._findScavengeForm(level);
                 if (!form) {
-                    alert(`Cannot find scavenge form for level ${level}`);
+                    alert(`Cannot find scavenge form for level ${level}. Please check the page structure.`);
+                    console.log('Available scavenge elements:', document.querySelectorAll('.scavenge-option, [id*="scavenge"], [class*="scavenge"]'));
                     return;
                 }
                 
                 // Fill troop inputs
+                let populatedCount = 0;
                 Object.entries(troops).forEach(([unit, count]) => {
-                    const input = CONFIG.SELECTORS.troopInput(form, unit);
-                    if (input && count > 0) {
-                        input.value = count;
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (count > 0) {
+                        const input = this._findTroopInput(form, unit);
+                        if (input) {
+                            input.value = count;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            populatedCount++;
+                        }
                     }
                 });
+                
+                if (populatedCount === 0) {
+                    alert(`Could not find troop input fields in level ${level} form.`);
+                    console.log('Form structure:', form);
+                    return;
+                }
                 
                 // Visual feedback
                 form.style.backgroundColor = '#ffffcc';
                 form.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
                 setTimeout(() => form.style.backgroundColor = '', 2000);
-                alert(`Level ${level} scavenge populated! Click "Start scavenging" to confirm.`);
+                alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
                 
             } catch (error) {
                 alert(`Error: ${error.message}`);
+                console.error('ScavengeSender error:', error);
             }
+        },
+        
+        _findScavengeForm(level) {
+            const selectors = CONFIG.SELECTORS.scavengeForm(level);
+            
+            for (const selector of selectors) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    console.log(`Found scavenge form using selector: ${selector}`);
+                    return element;
+                }
+            }
+            
+            // Additional fallback: try to find by level number
+            const allScavengeElements = document.querySelectorAll('.scavenge-option, [id*="scavenge"], [class*="scavenge"]');
+            if (allScavengeElements[level - 1]) {
+                console.log(`Found scavenge form using index: ${level - 1}`);
+                return allScavengeElements[level - 1];
+            }
+            
+            return null;
+        },
+        
+        _findTroopInput(form, unit) {
+            // Try multiple input patterns
+            const inputSelectors = [
+                `input[name="${unit}"]`,
+                `input[name*="${unit}"]`,
+                `input[id*="${unit}"]`,
+                `input[class*="${unit}"]`,
+                `input[data-unit="${unit}"]`
+            ];
+            
+            for (const selector of inputSelectors) {
+                const input = form.querySelector(selector);
+                if (input) return input;
+            }
+            
+            return null;
         }
     };
 
