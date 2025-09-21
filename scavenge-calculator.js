@@ -850,12 +850,8 @@
                 setTimeout(() => {
                     const startButton = this._findStartButton(form);
                     if (startButton) {
-                        if (confirm(`Auto-click "Start scavenging" for Level ${level}?`)) {
-                            startButton.click();
-                            alert(`Level ${level} scavenge started automatically!`);
-                        } else {
-                            alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
-                        }
+                        startButton.click();
+                        alert(`Level ${level} scavenge started automatically!`);
                     } else {
                         alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
                     }
