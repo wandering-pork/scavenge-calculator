@@ -84,42 +84,49 @@ $.getScript("https://wandering-pork.github.io/scavenge-calculator/scavenge-calcu
     <h2>Features</h2>
     
     <div class="feature">
-        <h3>🎯 Smart Optimization</h3>
-        <p>Automatically calculates the best troop distribution across scavenge levels to maximize resources per hour.</p>
+        <h3>🎯 Multiple Optimization Modes</h3>
+        <p>Choose between three strategies: optimize per hour (maximum resources/hour), per run (maximum total resources), or equal duration (synchronized completion).</p>
+    </div>
+
+    <div class="feature">
+        <h3>🚀 Smart Allocation</h3>
+        <p>Efficiency-first approach prioritizes higher efficiency scavenge levels. Only allocates to lower levels when higher ones hit time constraints.</p>
+    </div>
+
+    <div class="feature">
+        <h3>🎯 ALL Buttons</h3>
+        <p>One-click buttons to set maximum available troops for each unit type. No more manual counting!</p>
+    </div>
+
+    <div class="feature">
+        <h3>🔇 Silent Auto-Send</h3>
+        <p>Click "Send Level X" to automatically fill inputs AND start the scavenge. No confirmation popups - just watch the timer appear!</p>
+    </div>
+
+    <div class="feature">
+        <h3>⏱️ Time Constraints</h3>
+        <p>Set maximum duration limits. The calculator respects your time constraints and redistributes troops accordingly.</p>
     </div>
 
     <div class="feature">
         <h3>🏠 Auto-Detection</h3>
-        <p>Detects your world speed and available troops automatically. Shows current troop counts for easy reference.</p>
-    </div>
-
-    <div class="feature">
-        <h3>📊 Resource Breakdown</h3>
-        <p>Shows detailed resource gains (wood, clay, iron) and duration for each scavenge level.</p>
-    </div>
-
-    <div class="feature">
-        <h3>🚀 One-Click Population</h3>
-        <p>Click "Send Level X" to automatically fill the troop inputs for that scavenge level. You still need to click "Start scavenging" to confirm.</p>
-    </div>
-
-    <div class="feature">
-        <h3>📱 Clean Interface</h3>
-        <p>Minimal, non-intrusive interface that appears in the top-right corner. Easy to close when not needed.</p>
+        <p>Detects world speed and available troops automatically. Accurate duration calculations based on actual Tribal Wars formulas.</p>
     </div>
 
     <h2>How to Use</h2>
     <ol>
         <li>Navigate to your village's scavenge page (Place → Scavenge)</li>
         <li>Click your bookmark or run the script</li>
-        <li>Enter how many troops you want to use for scavenging</li>
-        <li>Click "Calculate Optimal"</li>
-        <li>Review the results and click "Send Level X" for each recommendation</li>
-        <li>Manually click "Start scavenging" to confirm each one</li>
+        <li>Choose your optimization mode (per hour is default)</li>
+        <li>Set troops manually or use ALL buttons for maximum troops</li>
+        <li>Optionally set time constraints and select specific scavenge levels</li>
+        <li>Click "Calculate Optimal Distribution"</li>
+        <li>Click "Send Level X" buttons - they automatically start scavenges</li>
+        <li>Monitor the running timers to track progress</li>
     </ol>
 
     <h2>Technical Details</h2>
-    <p>This calculator uses a greedy optimization algorithm that prioritizes higher-efficiency scavenge levels while respecting your troop constraints. It follows clean code principles (KISS, DRY, YAGNI, SOLID) for maintainability and reliability.</p>
+    <p>Features three optimization algorithms: iterative optimization for per-hour mode, efficiency-first allocation for per-run mode, and fixed ratios for equal duration mode. Uses correct Tribal Wars formulas for duration and resource calculations. Follows clean code principles (KISS, DRY, YAGNI, SOLID) for maintainability and reliability.</p>
 
     <h2>Support</h2>
     <p>If you encounter any issues or have suggestions, please create an issue on the <a href="https://github.com/wandering-pork/scavenge-calculator">GitHub repository</a>.</p>

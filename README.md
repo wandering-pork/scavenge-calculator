@@ -4,11 +4,14 @@ A minimal, maintainable scavenge calculator that optimizes troop distribution fo
 
 ## ✨ Features
 
-- **Smart Optimization**: Automatically calculates optimal troop distribution across scavenge levels
-- **Auto-Detection**: Detects world speed and available troops automatically  
+- **Multiple Optimization Modes**: Choose between optimized per hour, per run, or equal duration
+- **Smart Allocation**: Efficiency-first approach - higher efficiency levels get priority
+- **Auto-Detection**: Detects world speed and available troops automatically
+- **ALL Buttons**: One-click to set maximum available troops for each unit type
+- **Silent Auto-Send**: Fills inputs and automatically clicks start button (no popups)
+- **Time Constraints**: Set maximum duration limits for scavenges
 - **Resource Breakdown**: Shows detailed wood/clay/iron gains and duration for each level
-- **One-Click Population**: Fills scavenge forms with calculated troops (you still confirm manually)
-- **Clean Interface**: Non-intrusive UI that appears in top-right corner
+- **Clean Interface**: Embedded calculator with Tribal Wars styling
 - **Legal Compliance**: One action per click, no automation, helper tool only
 
 ## 🚀 Quick Start
@@ -34,10 +37,12 @@ $.getScript("https://wandering-pork.github.io/scavenge-calculator/scavenge-calcu
 
 1. **Navigate** to your village's scavenge page
 2. **Run** the script using your bookmark or console
-3. **Enter** how many troops you want to use for scavenging
-4. **Click** "Calculate Optimal" to see recommendations
-5. **Click** "Send Level X" buttons to populate each scavenge form
-6. **Manually confirm** each scavenge by clicking "Start scavenging"
+3. **Choose optimization mode**: Per hour (default), per run, or equal duration
+4. **Set troops**: Enter manually or use ALL buttons for maximum troops
+5. **Optional**: Set time constraints and select specific scavenge levels
+6. **Click** "Calculate Optimal Distribution" to see recommendations
+7. **Click** "Send Level X" buttons - automatically fills inputs and starts scavenges
+8. **Monitor** - watch the timers to see scavenges running
 
 ## ✅ Legal Compliance
 
@@ -58,11 +63,12 @@ This tool is designed to comply with Tribal Wars rules:
 - **YAGNI Principle**: Only essential features included
 - **SOLID Principles**: Single responsibility modules with clear interfaces
 
-### Algorithm
-- Uses greedy optimization to maximize resources per hour
-- Prioritizes high-efficiency scavenge levels
-- Accounts for world speed and troop capacity constraints
-- Calculates actual resource gains and duration
+### Algorithms
+- **Per Hour**: Iterative optimization to maximize total resources per hour
+- **Per Run**: Efficiency-first allocation to maximize total resources per run
+- **Equal Duration**: Fixed ratios (57.7%, 23.1%, 11.5%, 7.7%) for synchronized completion
+- **Smart Constraints**: Respects time limits and redistributes capacity when needed
+- **Accurate Formulas**: Uses correct Tribal Wars duration and resource calculations
 
 ### Browser Support
 - Works in all modern browsers
@@ -118,14 +124,16 @@ scavenge-calculator/
 - [x] Resource calculations
 - [x] GitHub Pages hosting
 
-### Phase 2: Enhancements
-- [ ] Time constraint optimization
-- [ ] Multiple optimization modes
-- [ ] Better error handling
-- [ ] Unit tests
+### Phase 2: Advanced Features ✅
+- [x] Multiple optimization modes (per hour, per run, equal duration)
+- [x] Time constraint optimization
+- [x] ALL buttons for maximum troop setting
+- [x] Silent auto-send functionality
+- [x] Efficiency-first allocation
+- [x] Proper world speed detection
 
 ### Phase 3: Polish
-- [ ] Visual improvements
+- [ ] Unit tests
 - [ ] Performance optimization
 - [ ] Extended browser support
 - [ ] Tribal Wars support approval
