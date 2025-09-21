@@ -566,7 +566,7 @@
                 .troop-input-row {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 6px;
                 }
                 
                 .troop-input input {
@@ -584,6 +584,27 @@
                     background: #fff;
                 }
                 
+                .troop-all-btn {
+                    padding: 2px 6px;
+                    font-size: 9px;
+                    font-weight: bold;
+                    background: linear-gradient(to bottom, #c1a264, #b8956a);
+                    color: #2c1810;
+                    border: 1px outset #c1a264;
+                    cursor: pointer;
+                    border-radius: 2px;
+                    white-space: nowrap;
+                    text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
+                }
+
+                .troop-all-btn:hover {
+                    background: linear-gradient(to bottom, #b8956a, #a08c50);
+                }
+
+                .troop-all-btn:active {
+                    border-style: inset;
+                }
+
                 .troop-max {
                     font-size: 9px;
                     color: #5d4037;
@@ -700,6 +721,7 @@
                         <div class="troop-label">${unit}</div>
                         <div class="troop-input-row">
                             <input type="number" id="troop-${unit}" min="0" max="${available}" value="0" placeholder="0">
+                            <button type="button" class="troop-all-btn" onclick="setAllTroops('${unit}', ${available})">ALL</button>
                             <div class="troop-max">max: ${available.toLocaleString()}</div>
                         </div>
                     </div>
@@ -976,6 +998,14 @@
     };
 
     window.sendScavenge = (level, troops) => ScavengeSender.send(level, troops);
+
+    window.setAllTroops = (unit, maxAmount) => {
+        const input = document.getElementById(`troop-${unit}`);
+        if (input) {
+            input.value = maxAmount;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
 
     // === PAGE DETECTION ===
     function isScavengePage() {
