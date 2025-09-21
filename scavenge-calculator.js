@@ -119,7 +119,7 @@
     const Calculator = {
         optimize(userTroops, worldSpeed, mode = 'per-hour', selectedLevels = [1,2,3,4], maxDuration = null) {
             const totalCapacity = this._calculateCapacity(userTroops);
-            const durationFactor = 1 / worldSpeed;
+            const durationFactor = 1; // Don't apply speed factor to duration calculation
             const allScavenges = GameData.getScavenges();
             
             // Filter scavenges to only include selected levels
