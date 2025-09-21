@@ -50,34 +50,95 @@
     // === GAME DATA EXTRACTION MODULE ===
     const GameData = {
         getWorldSpeed() {
-            return window.game_data?.speed || 
-                   window.game_data?.config?.speed ||
-                   this._parseFromURL() || 
-                   this._parseFromWorldData() ||
-                   this._parseFromPageContent() ||
-                   parseFloat(prompt("Enter world speed (e.g. 1.0, 1.2):")) || 1.0;
+            console.log('=== WORLD SPEED DETECTION DEBUG ===');
+
+            let speed = null;
+
+            // Try game_data.speed
+            if (window.game_data?.speed) {
+                speed = window.game_data.speed;
+                console.log('Found speed in window.game_data.speed:', speed);
+                return speed;
+            }
+
+            // Try game_data.config.speed
+            if (window.game_data?.config?.speed) {
+                speed = window.game_data.config.speed;
+                console.log('Found speed in window.game_data.config.speed:', speed);
+                return speed;
+            }
+
+            // Try URL parsing
+            speed = this._parseFromURL();
+            if (speed) {
+                console.log('Found speed from URL:', speed);
+                return speed;
+            }
+
+            // Try other world data
+            speed = this._parseFromWorldData();
+            if (speed) {
+                console.log('Found speed from world data:', speed);
+                return speed;
+            }
+
+            // Try page content
+            speed = this._parseFromPageContent();
+            if (speed) {
+                console.log('Found speed from page content:', speed);
+                return speed;
+            }
+
+            console.log('No speed found, prompting user...');
+            speed = parseFloat(prompt("Enter world speed (e.g. 1.0, 1.2):")) || 1.0;
+            console.log('User entered speed:', speed);
+            console.log('================================');
+
+            return speed;
         },
         
         _parseFromURL() {
             const url = window.location.href;
+            console.log('Parsing URL:', url);
+
             // Try multiple URL patterns
             const patterns = [
                 /speed[\D]*([0-9.]+)/,
                 /world[\D]*([0-9.]+)/,
                 /s([0-9.]+)/
             ];
-            
+
             for (const pattern of patterns) {
                 const match = url.match(pattern);
-                if (match) return parseFloat(match[1]);
+                console.log(`Pattern ${pattern} match:`, match);
+                if (match) {
+                    console.log('Found speed in URL:', parseFloat(match[1]));
+                    return parseFloat(match[1]);
+                }
             }
+            console.log('No speed found in URL');
             return null;
         },
         
         _parseFromWorldData() {
+            console.log('Checking world data variables...');
+
             // Try other common Tribal Wars global variables
-            if (window.TribalWars?.world?.speed) return window.TribalWars.world.speed;
-            if (window.world_data?.speed) return window.world_data.speed;
+            if (window.TribalWars?.world?.speed) {
+                console.log('Found speed in TribalWars.world.speed:', window.TribalWars.world.speed);
+                return window.TribalWars.world.speed;
+            }
+
+            if (window.world_data?.speed) {
+                console.log('Found speed in world_data.speed:', window.world_data.speed);
+                return window.world_data.speed;
+            }
+
+            console.log('Available window variables:');
+            console.log('window.game_data:', window.game_data);
+            console.log('window.TribalWars:', window.TribalWars);
+            console.log('window.world_data:', window.world_data);
+
             return null;
         },
         
