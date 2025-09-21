@@ -89,9 +89,9 @@
                 return speed;
             }
 
-            console.log('No speed found, prompting user...');
-            speed = parseFloat(prompt("Enter world speed (e.g. 1.0, 1.2):")) || 1.0;
-            console.log('User entered speed:', speed);
+            console.log('No speed found, defaulting to 1.0');
+            speed = 1.0; // Default to standard speed
+            console.log('Using default speed:', speed);
             console.log('================================');
 
             return speed;
@@ -101,11 +101,13 @@
             const url = window.location.href;
             console.log('Parsing URL:', url);
 
-            // Try multiple URL patterns
+            // Try multiple URL patterns - more specific to avoid false matches
             const patterns = [
-                /speed[\D]*([0-9.]+)/,
-                /world[\D]*([0-9.]+)/,
-                /s([0-9.]+)/
+                /[?&]speed=([0-9.]+)/,           // ?speed=1.2
+                /[?&]world_speed=([0-9.]+)/,     // ?world_speed=1.2
+                /speed[\D]*([0-9.]+)/,           // speed:1.2 or similar
+                /world[\D]*([0-9.]+)/            // world_speed:1.2 or similar
+                // Removed /s([0-9.]+)/ as it matches server names like xs3
             ];
 
             for (const pattern of patterns) {
