@@ -119,7 +119,7 @@
     const Calculator = {
         optimize(userTroops, worldSpeed, mode = 'per-hour', selectedLevels = [1,2,3,4], maxDuration = null) {
             const totalCapacity = this._calculateCapacity(userTroops);
-            const durationFactor = 1; // Don't apply speed factor to duration calculation
+            const durationFactor = Math.pow(worldSpeed, -0.55);
             const allScavenges = GameData.getScavenges();
             
             // Filter scavenges to only include selected levels
@@ -246,9 +246,11 @@
         _calculateEfficiency(capacity, ratio, durationFactor) {
             if (capacity === 0) return null;
 
-            // Correct Tribal Wars formulas from official calculator
-            // Duration: ((capacity^2 * 100 * ratio^2)^0.45 + 1800) * durationFactor
-            const baseDuration = Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45) + 1800;
+            // Correct Tribal Wars formulas from website reference
+            // Duration: ((Math.pow(Math.pow(iCap * r, 2) * 100 * Math.pow(iRatio, 2), 0.45) + 1800) * df)
+            // For simplicity, assuming r = 1 (sending full capacity to this level)
+            const r = 1; // proportion of troops sent to this level
+            const baseDuration = Math.pow(Math.pow(capacity * r, 2) * 100 * Math.pow(ratio, 2), 0.45) + 1800;
             const duration = baseDuration * durationFactor;
             const durationHours = duration / 3600;
 
