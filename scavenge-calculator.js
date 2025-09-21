@@ -50,97 +50,33 @@
     // === GAME DATA EXTRACTION MODULE ===
     const GameData = {
         getWorldSpeed() {
-            console.log('=== WORLD SPEED DETECTION DEBUG ===');
-
-            let speed = null;
-
-            // Try game_data.speed
-            if (window.game_data?.speed) {
-                speed = window.game_data.speed;
-                console.log('Found speed in window.game_data.speed:', speed);
-                return speed;
-            }
-
-            // Try game_data.config.speed
-            if (window.game_data?.config?.speed) {
-                speed = window.game_data.config.speed;
-                console.log('Found speed in window.game_data.config.speed:', speed);
-                return speed;
-            }
-
-            // Try URL parsing
-            speed = this._parseFromURL();
-            if (speed) {
-                console.log('Found speed from URL:', speed);
-                return speed;
-            }
-
-            // Try other world data
-            speed = this._parseFromWorldData();
-            if (speed) {
-                console.log('Found speed from world data:', speed);
-                return speed;
-            }
-
-            // Try page content
-            speed = this._parseFromPageContent();
-            if (speed) {
-                console.log('Found speed from page content:', speed);
-                return speed;
-            }
-
-            console.log('No speed found, defaulting to 1.0');
-            speed = 1.0; // Default to standard speed
-            console.log('Using default speed:', speed);
-            console.log('================================');
-
-            return speed;
+            return window.game_data?.speed ||
+                   window.game_data?.config?.speed ||
+                   this._parseFromURL() ||
+                   this._parseFromWorldData() ||
+                   this._parseFromPageContent() ||
+                   1.0; // Default to standard speed
         },
         
         _parseFromURL() {
             const url = window.location.href;
-            console.log('Parsing URL:', url);
-
-            // Try multiple URL patterns - more specific to avoid false matches
             const patterns = [
                 /[?&]speed=([0-9.]+)/,           // ?speed=1.2
                 /[?&]world_speed=([0-9.]+)/,     // ?world_speed=1.2
                 /speed[\D]*([0-9.]+)/,           // speed:1.2 or similar
                 /world[\D]*([0-9.]+)/            // world_speed:1.2 or similar
-                // Removed /s([0-9.]+)/ as it matches server names like xs3
             ];
 
             for (const pattern of patterns) {
                 const match = url.match(pattern);
-                console.log(`Pattern ${pattern} match:`, match);
-                if (match) {
-                    console.log('Found speed in URL:', parseFloat(match[1]));
-                    return parseFloat(match[1]);
-                }
+                if (match) return parseFloat(match[1]);
             }
-            console.log('No speed found in URL');
             return null;
         },
         
         _parseFromWorldData() {
-            console.log('Checking world data variables...');
-
-            // Try other common Tribal Wars global variables
-            if (window.TribalWars?.world?.speed) {
-                console.log('Found speed in TribalWars.world.speed:', window.TribalWars.world.speed);
-                return window.TribalWars.world.speed;
-            }
-
-            if (window.world_data?.speed) {
-                console.log('Found speed in world_data.speed:', window.world_data.speed);
-                return window.world_data.speed;
-            }
-
-            console.log('Available window variables:');
-            console.log('window.game_data:', window.game_data);
-            console.log('window.TribalWars:', window.TribalWars);
-            console.log('window.world_data:', window.world_data);
-
+            if (window.TribalWars?.world?.speed) return window.TribalWars.world.speed;
+            if (window.world_data?.speed) return window.world_data.speed;
             return null;
         },
         
@@ -317,25 +253,6 @@
             const duration = baseDuration * durationFactor;
             const durationHours = duration / 3600;
 
-            // DEBUG: Log calculation details
-            console.log('=== TIME CALCULATION DEBUG ===');
-            console.log('Capacity:', capacity);
-            console.log('Ratio:', ratio);
-            console.log('Duration Factor:', durationFactor);
-            console.log('r (proportion):', r);
-            console.log('capacity * r =', capacity * r);
-            console.log('(capacity * r)^2 =', Math.pow(capacity * r, 2));
-            console.log('ratio^2 =', Math.pow(ratio, 2));
-            console.log('Base calculation: (capacity*r)^2 * 100 * ratio^2 =', Math.pow(capacity * r, 2) * 100 * Math.pow(ratio, 2));
-            console.log('Power 0.45 of above =', Math.pow(Math.pow(capacity * r, 2) * 100 * Math.pow(ratio, 2), 0.45));
-            console.log('Base duration (seconds):', baseDuration);
-            console.log('Final duration (seconds):', duration);
-            console.log('Final duration (hours):', durationHours);
-            console.log('Final duration (formatted):', utils.formatTime(durationHours));
-            console.log('Expected: 51 minutes (3060 seconds)');
-            console.log('Actual: ', duration, 'seconds');
-            console.log('Ratio actual/expected:', duration / 3060);
-
             // Resources: capacity * ratio (total), then split into 3 types
             const totalResources = capacity * ratio;
             const resourcesPerType = Math.floor(totalResources / 3);
@@ -346,8 +263,6 @@
             const clay = resourcesPerType + (remainder >= 2 ? 1 : 0);
             const iron = resourcesPerType;
 
-            console.log('Resources - Wood:', wood, 'Clay:', clay, 'Iron:', iron, 'Total:', wood + clay + iron);
-            console.log('================================');
 
             return {
                 wood: wood,
@@ -905,10 +820,9 @@
                 const form = this._findScavengeForm(level);
                 if (!form) {
                     alert(`Cannot find scavenge form for level ${level}. Please check the page structure.`);
-                    console.log('Available scavenge elements:', document.querySelectorAll('.scavenge-option, [id*="scavenge"], [class*="scavenge"]'));
                     return;
                 }
-                
+
                 // Fill troop inputs
                 let populatedCount = 0;
                 Object.entries(troops).forEach(([unit, count]) => {
@@ -922,20 +836,32 @@
                         }
                     }
                 });
-                
+
                 if (populatedCount === 0) {
                     alert(`Could not find troop input fields in level ${level} form.`);
-                    console.log('Form structure:', form);
                     return;
                 }
-                
+
                 // Visual feedback
                 form.style.backgroundColor = '#ffffcc';
                 form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
-                setTimeout(() => form.style.backgroundColor = '', 2000);
-                alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
-                
+
+                // Try to automatically click the start button
+                setTimeout(() => {
+                    const startButton = this._findStartButton(form);
+                    if (startButton) {
+                        if (confirm(`Auto-click "Start scavenging" for Level ${level}?`)) {
+                            startButton.click();
+                            alert(`Level ${level} scavenge started automatically!`);
+                        } else {
+                            alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
+                        }
+                    } else {
+                        alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
+                    }
+                    form.style.backgroundColor = '';
+                }, 500);
+
             } catch (error) {
                 alert(`Error: ${error.message}`);
                 console.error('ScavengeSender error:', error);
@@ -943,56 +869,72 @@
         },
         
         _findScavengeForm(level) {
-            console.log('=== SCAVENGE BUTTON DEBUG ===');
-            console.log('Looking for scavenge form for level:', level);
-
             const selectors = CONFIG.SELECTORS.scavengeForm(level);
-            console.log('Trying selectors:', selectors);
 
             for (const selector of selectors) {
                 try {
                     const element = document.querySelector(selector);
-                    console.log(`Selector "${selector}" result:`, element);
-                    if (element) {
-                        console.log(`✓ Found scavenge form using selector: ${selector}`);
-                        console.log('Element details:', {
-                            id: element.id,
-                            className: element.className,
-                            tagName: element.tagName,
-                            innerHTML: element.innerHTML.substring(0, 200) + '...'
-                        });
-                        return element;
-                    }
+                    if (element) return element;
                 } catch (e) {
-                    console.log(`Error with selector "${selector}":`, e);
+                    // Continue to next selector
                 }
             }
 
             // Additional fallback: try to find by level number
             const allScavengeElements = document.querySelectorAll('.scavenge-option, [id*="scavenge"], [class*="scavenge"]');
-            console.log('All scavenge elements found:', allScavengeElements.length);
-            allScavengeElements.forEach((el, i) => {
-                console.log(`Element ${i}:`, {
-                    id: el.id,
-                    className: el.className,
-                    tagName: el.tagName
-                });
-            });
-
             if (allScavengeElements[level - 1]) {
-                console.log(`✓ Found scavenge form using index: ${level - 1}`);
                 return allScavengeElements[level - 1];
             }
 
-            console.log('❌ No scavenge form found for level', level);
-            console.log('================================');
+            return null;
+        },
+
+        _findStartButton(form) {
+            // Look for start button in the form or nearby
+            const buttonSelectors = [
+                'button[type="submit"]',
+                'input[type="submit"]',
+                'button:contains("Start")',
+                'button:contains("scaveng")',
+                '[onclick*="scaveng"]',
+                '.btn-confirm',
+                '.btn-default'
+            ];
+
+            // First try within the form
+            for (const selector of buttonSelectors) {
+                const button = form.querySelector(selector);
+                if (button) return button;
+            }
+
+            // Then try in the parent container or nearby
+            const container = form.closest('.scavenge-container') || form.parentElement;
+            if (container) {
+                for (const selector of buttonSelectors) {
+                    const button = container.querySelector(selector);
+                    if (button) return button;
+                }
+            }
+
+            // Look for any button with "start" text (case insensitive)
+            const allButtons = document.querySelectorAll('button, input[type="submit"]');
+            for (const button of allButtons) {
+                const text = (button.textContent || button.value || '').toLowerCase();
+                if (text.includes('start') || text.includes('scaveng')) {
+                    // Make sure it's near our form
+                    const rect1 = form.getBoundingClientRect();
+                    const rect2 = button.getBoundingClientRect();
+                    const distance = Math.abs(rect1.top - rect2.top) + Math.abs(rect1.left - rect2.left);
+                    if (distance < 500) { // Within 500px
+                        return button;
+                    }
+                }
+            }
+
             return null;
         },
         
         _findTroopInput(form, unit) {
-            console.log(`=== TROOP INPUT DEBUG for ${unit} ===`);
-            console.log('Form element:', form);
-
             // First try within the form
             const inputSelectors = [
                 `input[name="${unit}"]`,
@@ -1002,36 +944,16 @@
                 `input[data-unit="${unit}"]`
             ];
 
-            console.log('Trying input selectors within form:', inputSelectors);
-
             for (const selector of inputSelectors) {
                 try {
                     const input = form.querySelector(selector);
-                    console.log(`Selector "${selector}" result:`, input);
-                    if (input) {
-                        console.log(`✓ Found input for ${unit} using selector: ${selector}`);
-                        return input;
-                    }
+                    if (input) return input;
                 } catch (e) {
-                    console.log(`Error with selector "${selector}":`, e);
+                    // Continue to next selector
                 }
             }
 
-            // Debug: Show all inputs in the form
-            const allInputs = form.querySelectorAll('input');
-            console.log(`All inputs in form (${allInputs.length} found):`);
-            allInputs.forEach((input, i) => {
-                console.log(`Input ${i}:`, {
-                    name: input.name,
-                    id: input.id,
-                    className: input.className,
-                    type: input.type,
-                    placeholder: input.placeholder
-                });
-            });
-
             // Try searching the entire page for inputs related to this unit
-            console.log('Searching entire page for inputs...');
             const pageInputSelectors = [
                 `input[name="${unit}"]`,
                 `input[name*="${unit}"]`,
@@ -1044,55 +966,20 @@
             for (const selector of pageInputSelectors) {
                 try {
                     const input = document.querySelector(selector);
-                    console.log(`Page selector "${selector}" result:`, input);
-                    if (input) {
-                        console.log(`✓ Found input for ${unit} on page using selector: ${selector}`);
-                        console.log('Input details:', {
-                            name: input.name,
-                            id: input.id,
-                            className: input.className,
-                            value: input.value,
-                            type: input.type,
-                            parentElement: input.parentElement.className
-                        });
-                        return input;
-                    }
+                    if (input) return input;
                 } catch (e) {
-                    console.log(`Error with page selector "${selector}":`, e);
+                    // Continue to next selector
                 }
             }
 
-            // Show all inputs on the page
-            const allPageInputs = document.querySelectorAll('input');
-            console.log(`All inputs on page (${allPageInputs.length} found):`);
-            allPageInputs.forEach((input, i) => {
-                if (i < 20) { // Limit to first 20 to avoid spam
-                    console.log(`Page Input ${i}:`, {
-                        name: input.name,
-                        id: input.id,
-                        className: input.className,
-                        type: input.type,
-                        placeholder: input.placeholder,
-                        parentClassName: input.parentElement?.className
-                    });
-                }
-            });
-
-            console.log(`❌ No input found for unit: ${unit}`);
-            console.log('================================');
             return null;
         }
     };
 
     // === GLOBAL EVENT HANDLERS ===
     window.handleCalculate = () => {
-        console.log('=== CALCULATE BUTTON DEBUG ===');
-
         const userTroops = UI.getUserTroops();
-        console.log('User troops input:', userTroops);
-
         const totalTroops = Object.values(userTroops).reduce((sum, count) => sum + count, 0);
-        console.log('Total troops:', totalTroops);
 
         if (totalTroops === 0) {
             alert('Please enter some troops to calculate with.');
@@ -1100,27 +987,16 @@
         }
 
         const selectedLevels = UI.getSelectedLevels();
-        console.log('Selected levels:', selectedLevels);
-
         if (selectedLevels.length === 0) {
             alert('Please select at least one scavenge level to include.');
             return;
         }
 
         const worldSpeed = GameData.getWorldSpeed();
-        console.log('World speed:', worldSpeed);
-
         const optimizationMode = UI.getOptimizationMode();
-        console.log('Optimization mode:', optimizationMode);
-
         const timeConstraint = UI.getTimeConstraint();
-        console.log('Time constraint:', timeConstraint);
 
-        console.log('Starting calculation...');
         const results = Calculator.optimize(userTroops, worldSpeed, optimizationMode, selectedLevels, timeConstraint);
-        console.log('Calculation results:', results);
-        console.log('================================');
-
         UI.displayResults(results, optimizationMode);
     };
 
