@@ -1000,10 +1000,16 @@
     window.sendScavenge = (level, troops) => ScavengeSender.send(level, troops);
 
     window.setAllTroops = (unit, maxAmount) => {
+        console.log('setAllTroops called with:', unit, maxAmount);
         const input = document.getElementById(`troop-${unit}`);
+        console.log('Found input:', input);
         if (input) {
             input.value = maxAmount;
+            console.log('Set value to:', maxAmount);
             input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+            console.error('Could not find input for unit:', unit);
         }
     };
 
