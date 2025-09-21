@@ -894,8 +894,6 @@
             const buttonSelectors = [
                 'button[type="submit"]',
                 'input[type="submit"]',
-                'button:contains("Start")',
-                'button:contains("scaveng")',
                 '[onclick*="scaveng"]',
                 '.btn-confirm',
                 '.btn-default'
