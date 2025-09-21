@@ -184,29 +184,77 @@
         },
         
         _optimizeForMaxResources(totalCapacity, scavenges, durationFactor, maxDuration = null) {
-            // Prioritize maximum total resources per run
-            const distribution = new Array(scavenges.length).fill(0);
-            let remaining = totalCapacity;
-            
-            // Prioritize highest ratio levels for maximum total resources
-            const sortedIndexes = scavenges
-                .map((s, i) => ({ index: i, ratio: s.ratio }))
-                .sort((a, b) => b.ratio - a.ratio);
-            
-            for (const { index } of sortedIndexes) {
-                if (remaining <= 0) break;
-                let allocation = Math.min(remaining, totalCapacity / scavenges.length);
-                
-                // Apply time constraint if specified
-                if (maxDuration) {
-                    allocation = this._limitByDuration(allocation, scavenges[index].ratio, durationFactor, maxDuration);
-                }
-                
-                distribution[index] = allocation;
-                remaining -= allocation;
+            // Iterative optimization to maximize total resources per run
+            let bestDistribution = new Array(scavenges.length).fill(0);
+            let bestTotalResources = 0;
+
+            // Start with equal distribution
+            const baseAllocation = totalCapacity / scavenges.length;
+            let currentDistribution = scavenges.map(() => baseAllocation);
+
+            // Apply duration constraints to initial distribution
+            if (maxDuration) {
+                currentDistribution = currentDistribution.map((capacity, i) =>
+                    this._limitByDuration(capacity, scavenges[i].ratio, durationFactor, maxDuration)
+                );
             }
-            
-            return distribution;
+
+            // Iterative optimization: try moving capacity between scavenges
+            const maxIterations = 20;
+            const stepSize = totalCapacity * 0.05; // 5% of total capacity per step
+
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                let improved = false;
+
+                // Try moving capacity from each scavenge to every other scavenge
+                for (let from = 0; from < scavenges.length; from++) {
+                    for (let to = 0; to < scavenges.length; to++) {
+                        if (from === to || currentDistribution[from] < stepSize) continue;
+
+                        // Try moving capacity
+                        const testDistribution = [...currentDistribution];
+                        testDistribution[from] -= stepSize;
+                        testDistribution[to] += stepSize;
+
+                        // Apply duration constraints
+                        if (maxDuration) {
+                            const constrainedTo = this._limitByDuration(
+                                testDistribution[to],
+                                scavenges[to].ratio,
+                                durationFactor,
+                                maxDuration
+                            );
+
+                            if (constrainedTo < testDistribution[to]) {
+                                // Put back the excess capacity
+                                const excess = testDistribution[to] - constrainedTo;
+                                testDistribution[to] = constrainedTo;
+                                testDistribution[from] += excess;
+                            }
+                        }
+
+                        // Calculate total resources for this distribution
+                        const totalResources = testDistribution.reduce((total, capacity, i) => {
+                            if (capacity <= 0) return total;
+                            const efficiency = this._calculateEfficiency(capacity, scavenges[i].ratio, durationFactor);
+                            return total + (efficiency ? efficiency.total : 0);
+                        }, 0);
+
+                        // Keep this distribution if it's better
+                        if (totalResources > bestTotalResources) {
+                            bestTotalResources = totalResources;
+                            bestDistribution = [...testDistribution];
+                            currentDistribution = [...testDistribution];
+                            improved = true;
+                        }
+                    }
+                }
+
+                // If no improvement found, we've reached a local optimum
+                if (!improved) break;
+            }
+
+            return bestDistribution.length > 0 ? bestDistribution : currentDistribution;
         },
         
         _optimizeForEqualDuration(totalCapacity, scavenges, durationFactor, maxDuration = null) {
