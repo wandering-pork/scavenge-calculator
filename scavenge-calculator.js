@@ -91,26 +91,37 @@
         },
         
         getTroops() {
+            console.log('=== TROOPS DETECTION DEBUG ===');
             const troops = {};
+
             // First try the original selector
-            document.querySelectorAll(CONFIG.SELECTORS.unitsDisplay).forEach(el => {
+            console.log('Trying original selector:', CONFIG.SELECTORS.unitsDisplay);
+            const originalElements = document.querySelectorAll(CONFIG.SELECTORS.unitsDisplay);
+            console.log('Original elements found:', originalElements.length);
+
+            originalElements.forEach(el => {
                 const unit = el.getAttribute('data-unit');
                 const count = parseInt(el.textContent.replace(/[.,]/g, '')) || 0;
+                console.log(`Original - Unit: ${unit}, Text: "${el.textContent}", Count: ${count}`);
                 if (unit) troops[unit] = count;
             });
 
-            // If no troops found, try the squad-village-required elements
-            if (Object.keys(troops).length === 0) {
-                document.querySelectorAll('.units-entry-all.squad-village-required').forEach(el => {
-                    const unit = el.getAttribute('data-unit');
-                    // Extract number from text like "(10)"
-                    const text = el.textContent.trim();
-                    const match = text.match(/\((\d+)\)/);
-                    const count = match ? parseInt(match[1]) : 0;
-                    if (unit) troops[unit] = count;
-                });
-            }
+            // Try the squad-village-required elements
+            console.log('Trying squad-village-required selector...');
+            const squadElements = document.querySelectorAll('.units-entry-all.squad-village-required');
+            console.log('Squad elements found:', squadElements.length);
 
+            squadElements.forEach(el => {
+                const unit = el.getAttribute('data-unit');
+                const text = el.textContent.trim();
+                const match = text.match(/\((\d+)\)/);
+                const count = match ? parseInt(match[1]) : 0;
+                console.log(`Squad - Unit: ${unit}, Text: "${text}", Match: ${match}, Count: ${count}`);
+                if (unit && count > 0) troops[unit] = count;
+            });
+
+            console.log('Final troops object:', troops);
+            console.log('================================');
             return troops;
         },
         
