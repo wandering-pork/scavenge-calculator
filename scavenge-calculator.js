@@ -245,23 +245,37 @@
         
         _calculateEfficiency(capacity, ratio, durationFactor) {
             if (capacity === 0) return null;
-            
+
             // Correct Tribal Wars formulas from official calculator
             // Duration: ((capacity^2 * 100 * ratio^2)^0.45 + 1800) * durationFactor
             const baseDuration = Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45) + 1800;
             const duration = baseDuration * durationFactor;
             const durationHours = duration / 3600;
-            
+
+            // DEBUG: Log calculation details
+            console.log('=== TIME CALCULATION DEBUG ===');
+            console.log('Capacity:', capacity);
+            console.log('Ratio:', ratio);
+            console.log('Duration Factor:', durationFactor);
+            console.log('Base calculation: (capacity^2 * 100 * ratio^2)^0.45 =', Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45));
+            console.log('Base duration (seconds):', baseDuration);
+            console.log('Final duration (seconds):', duration);
+            console.log('Final duration (hours):', durationHours);
+            console.log('Final duration (formatted):', utils.formatTime(durationHours));
+
             // Resources: capacity * ratio (total), then split into 3 types
             const totalResources = capacity * ratio;
             const resourcesPerType = Math.floor(totalResources / 3);
             const remainder = totalResources - (resourcesPerType * 3);
-            
+
             // Distribute remainder: wood gets first extra, clay gets second extra
             const wood = resourcesPerType + (remainder >= 1 ? 1 : 0);
             const clay = resourcesPerType + (remainder >= 2 ? 1 : 0);
             const iron = resourcesPerType;
-            
+
+            console.log('Resources - Wood:', wood, 'Clay:', clay, 'Iron:', iron, 'Total:', wood + clay + iron);
+            console.log('================================');
+
             return {
                 wood: wood,
                 clay: clay,
@@ -856,27 +870,56 @@
         },
         
         _findScavengeForm(level) {
+            console.log('=== SCAVENGE BUTTON DEBUG ===');
+            console.log('Looking for scavenge form for level:', level);
+
             const selectors = CONFIG.SELECTORS.scavengeForm(level);
-            
+            console.log('Trying selectors:', selectors);
+
             for (const selector of selectors) {
-                const element = document.querySelector(selector);
-                if (element) {
-                    console.log(`Found scavenge form using selector: ${selector}`);
-                    return element;
+                try {
+                    const element = document.querySelector(selector);
+                    console.log(`Selector "${selector}" result:`, element);
+                    if (element) {
+                        console.log(`✓ Found scavenge form using selector: ${selector}`);
+                        console.log('Element details:', {
+                            id: element.id,
+                            className: element.className,
+                            tagName: element.tagName,
+                            innerHTML: element.innerHTML.substring(0, 200) + '...'
+                        });
+                        return element;
+                    }
+                } catch (e) {
+                    console.log(`Error with selector "${selector}":`, e);
                 }
             }
-            
+
             // Additional fallback: try to find by level number
             const allScavengeElements = document.querySelectorAll('.scavenge-option, [id*="scavenge"], [class*="scavenge"]');
+            console.log('All scavenge elements found:', allScavengeElements.length);
+            allScavengeElements.forEach((el, i) => {
+                console.log(`Element ${i}:`, {
+                    id: el.id,
+                    className: el.className,
+                    tagName: el.tagName
+                });
+            });
+
             if (allScavengeElements[level - 1]) {
-                console.log(`Found scavenge form using index: ${level - 1}`);
+                console.log(`✓ Found scavenge form using index: ${level - 1}`);
                 return allScavengeElements[level - 1];
             }
-            
+
+            console.log('❌ No scavenge form found for level', level);
+            console.log('================================');
             return null;
         },
         
         _findTroopInput(form, unit) {
+            console.log(`=== TROOP INPUT DEBUG for ${unit} ===`);
+            console.log('Form element:', form);
+
             // Try multiple input patterns
             const inputSelectors = [
                 `input[name="${unit}"]`,
@@ -885,37 +928,85 @@
                 `input[class*="${unit}"]`,
                 `input[data-unit="${unit}"]`
             ];
-            
+
+            console.log('Trying input selectors:', inputSelectors);
+
             for (const selector of inputSelectors) {
-                const input = form.querySelector(selector);
-                if (input) return input;
+                try {
+                    const input = form.querySelector(selector);
+                    console.log(`Selector "${selector}" result:`, input);
+                    if (input) {
+                        console.log(`✓ Found input for ${unit} using selector: ${selector}`);
+                        console.log('Input details:', {
+                            name: input.name,
+                            id: input.id,
+                            className: input.className,
+                            value: input.value,
+                            type: input.type
+                        });
+                        return input;
+                    }
+                } catch (e) {
+                    console.log(`Error with selector "${selector}":`, e);
+                }
             }
-            
+
+            // Debug: Show all inputs in the form
+            const allInputs = form.querySelectorAll('input');
+            console.log(`All inputs in form (${allInputs.length} found):`);
+            allInputs.forEach((input, i) => {
+                console.log(`Input ${i}:`, {
+                    name: input.name,
+                    id: input.id,
+                    className: input.className,
+                    type: input.type,
+                    placeholder: input.placeholder
+                });
+            });
+
+            console.log(`❌ No input found for unit: ${unit}`);
+            console.log('================================');
             return null;
         }
     };
 
     // === GLOBAL EVENT HANDLERS ===
     window.handleCalculate = () => {
+        console.log('=== CALCULATE BUTTON DEBUG ===');
+
         const userTroops = UI.getUserTroops();
+        console.log('User troops input:', userTroops);
+
         const totalTroops = Object.values(userTroops).reduce((sum, count) => sum + count, 0);
-        
+        console.log('Total troops:', totalTroops);
+
         if (totalTroops === 0) {
             alert('Please enter some troops to calculate with.');
             return;
         }
-        
+
         const selectedLevels = UI.getSelectedLevels();
+        console.log('Selected levels:', selectedLevels);
+
         if (selectedLevels.length === 0) {
             alert('Please select at least one scavenge level to include.');
             return;
         }
-        
+
         const worldSpeed = GameData.getWorldSpeed();
+        console.log('World speed:', worldSpeed);
+
         const optimizationMode = UI.getOptimizationMode();
+        console.log('Optimization mode:', optimizationMode);
+
         const timeConstraint = UI.getTimeConstraint();
-        
+        console.log('Time constraint:', timeConstraint);
+
+        console.log('Starting calculation...');
         const results = Calculator.optimize(userTroops, worldSpeed, optimizationMode, selectedLevels, timeConstraint);
+        console.log('Calculation results:', results);
+        console.log('================================');
+
         UI.displayResults(results, optimizationMode);
     };
 
