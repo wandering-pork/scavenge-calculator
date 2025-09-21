@@ -921,42 +921,26 @@
         },
         
         _findTroopInput(form, unit) {
-            // Based on Tribal Wars structure, troop inputs are likely in a separate form
-            // Search the entire page for troop inputs related to this unit
-            const pageInputSelectors = [
-                `input[name="${unit}"]`,
-                `input[name*="${unit}"]`,
-                `input[id*="${unit}"]`,
-                `input[class*="${unit}"]`,
-                `input[data-unit="${unit}"]`,
-                `input[placeholder*="${unit}"]`,
-                // Common Tribal Wars patterns
-                `input[name="units[${unit}]"]`,
-                `input[name="${unit}_input"]`,
-                `input[id="${unit}_input"]`,
-                `input.unit-input[data-unit="${unit}"]`
-            ];
-
-            for (const selector of pageInputSelectors) {
-                try {
-                    const input = document.querySelector(selector);
-                    if (input && input.type === 'number' || input.type === 'text') {
-                        return input;
-                    }
-                } catch (e) {
-                    // Continue to next selector
-                }
+            // Based on the HTML structure, look for the troop input with exact name match
+            const input = document.querySelector(`input[name="${unit}"]`);
+            if (input && input.classList.contains('unitsInput')) {
+                return input;
             }
 
-            // Look for inputs near unit images or labels
-            const unitElements = document.querySelectorAll(`[data-unit="${unit}"], img[src*="${unit}"], .unit_${unit}, .${unit}`);
-            for (const element of unitElements) {
-                // Look for nearby input fields
-                const nearbyInputs = element.parentElement?.querySelectorAll('input[type="number"], input[type="text"]') || [];
-                for (const input of nearbyInputs) {
-                    if (input.name.includes(unit) || input.id.includes(unit)) {
-                        return input;
-                    }
+            // Fallback selectors if the main one doesn't work
+            const fallbackSelectors = [
+                `input.unitsInput[name="${unit}"]`,
+                `input[name="${unit}"][class*="unitsInput"]`,
+                `input[name="${unit}"][type="text"]`,
+                `.candidate-squad-container input[name="${unit}"]`
+            ];
+
+            for (const selector of fallbackSelectors) {
+                try {
+                    const input = document.querySelector(selector);
+                    if (input) return input;
+                } catch (e) {
+                    // Continue to next selector
                 }
             }
 
