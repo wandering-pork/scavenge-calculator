@@ -890,42 +890,30 @@
         },
 
         _findStartButton(form) {
-            // Look for start button in the form or nearby
+            // Based on HTML structure, look for the start button within the scavenge option
+            const startButton = form.querySelector('.free_send_button');
+            if (startButton) return startButton;
+
+            // Fallback to other button selectors
             const buttonSelectors = [
+                '.btn-default',
                 'button[type="submit"]',
                 'input[type="submit"]',
                 '[onclick*="scaveng"]',
-                '.btn-confirm',
-                '.btn-default'
+                '.btn-confirm'
             ];
 
-            // First try within the form
             for (const selector of buttonSelectors) {
                 const button = form.querySelector(selector);
                 if (button) return button;
             }
 
-            // Then try in the parent container or nearby
-            const container = form.closest('.scavenge-container') || form.parentElement;
-            if (container) {
-                for (const selector of buttonSelectors) {
-                    const button = container.querySelector(selector);
-                    if (button) return button;
-                }
-            }
-
-            // Look for any button with "start" text (case insensitive)
-            const allButtons = document.querySelectorAll('button, input[type="submit"]');
+            // Look for any button with "start" text within the form
+            const allButtons = form.querySelectorAll('button, a.btn, input[type="submit"]');
             for (const button of allButtons) {
                 const text = (button.textContent || button.value || '').toLowerCase();
-                if (text.includes('start') || text.includes('scaveng')) {
-                    // Make sure it's near our form
-                    const rect1 = form.getBoundingClientRect();
-                    const rect2 = button.getBoundingClientRect();
-                    const distance = Math.abs(rect1.top - rect2.top) + Math.abs(rect1.left - rect2.left);
-                    if (distance < 500) { // Within 500px
-                        return button;
-                    }
+                if (text.includes('start')) {
+                    return button;
                 }
             }
 
@@ -933,40 +921,42 @@
         },
         
         _findTroopInput(form, unit) {
-            // First try within the form
-            const inputSelectors = [
-                `input[name="${unit}"]`,
-                `input[name*="${unit}"]`,
-                `input[id*="${unit}"]`,
-                `input[class*="${unit}"]`,
-                `input[data-unit="${unit}"]`
-            ];
-
-            for (const selector of inputSelectors) {
-                try {
-                    const input = form.querySelector(selector);
-                    if (input) return input;
-                } catch (e) {
-                    // Continue to next selector
-                }
-            }
-
-            // Try searching the entire page for inputs related to this unit
+            // Based on Tribal Wars structure, troop inputs are likely in a separate form
+            // Search the entire page for troop inputs related to this unit
             const pageInputSelectors = [
                 `input[name="${unit}"]`,
                 `input[name*="${unit}"]`,
                 `input[id*="${unit}"]`,
                 `input[class*="${unit}"]`,
                 `input[data-unit="${unit}"]`,
-                `input[placeholder*="${unit}"]`
+                `input[placeholder*="${unit}"]`,
+                // Common Tribal Wars patterns
+                `input[name="units[${unit}]"]`,
+                `input[name="${unit}_input"]`,
+                `input[id="${unit}_input"]`,
+                `input.unit-input[data-unit="${unit}"]`
             ];
 
             for (const selector of pageInputSelectors) {
                 try {
                     const input = document.querySelector(selector);
-                    if (input) return input;
+                    if (input && input.type === 'number' || input.type === 'text') {
+                        return input;
+                    }
                 } catch (e) {
                     // Continue to next selector
+                }
+            }
+
+            // Look for inputs near unit images or labels
+            const unitElements = document.querySelectorAll(`[data-unit="${unit}"], img[src*="${unit}"], .unit_${unit}, .${unit}`);
+            for (const element of unitElements) {
+                // Look for nearby input fields
+                const nearbyInputs = element.parentElement?.querySelectorAll('input[type="number"], input[type="text"]') || [];
+                for (const input of nearbyInputs) {
+                    if (input.name.includes(unit) || input.id.includes(unit)) {
+                        return input;
+                    }
                 }
             }
 
