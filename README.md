@@ -44,16 +44,6 @@ $.getScript("https://wandering-pork.github.io/scavenge-calculator/scavenge-calcu
 7. **Click** "Send Level X" buttons - automatically fills inputs and starts scavenges
 8. **Monitor** - watch the timers to see scavenges running
 
-## ✅ Legal Compliance
-
-This tool is designed to comply with Tribal Wars rules:
-
-- ✅ **One action per click** - Calculate button and individual send buttons
-- ✅ **No automation** - Does not automatically start scavenges
-- ✅ **Helper tool only** - Provides recommendations, you make decisions
-- ✅ **Manual confirmation** - You must click "Start scavenging" for each level
-
-**Important**: Always get approval from Tribal Wars support before using any third-party tools.
 
 ## 🔧 Technical Details
 
@@ -140,12 +130,7 @@ scavenge-calculator/
 
 ## ⚠️ Disclaimer
 
-This tool is provided as-is for educational and utility purposes. Users are responsible for:
-- Getting approval from Tribal Wars support before use
-- Ensuring compliance with current game rules
-- Using the tool responsibly and fairly
-
-The authors are not responsible for any account actions taken by Tribal Wars moderators.
+This tool is provided as-is for educational and utility purposes. Users are responsible for using the tool responsibly and fairly. The authors are not responsible for any account actions taken by game moderators.
 
 ## 📄 License
 

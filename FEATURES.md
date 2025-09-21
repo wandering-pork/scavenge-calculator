@@ -164,13 +164,7 @@ const iron = resourcesPerType;
 - No external API calls
 - Operates entirely client-side
 
-## 🔐 Security & Compliance
-
-### **Legal Compliance**
-- ✅ One action per click
-- ✅ No automation of game actions
-- ✅ Helper tool only (provides recommendations)
-- ✅ Manual confirmation required
+## 🔐 Security & Privacy
 
 ### **Security Features**
 - No external data transmission
