@@ -259,11 +259,19 @@
             console.log('Capacity:', capacity);
             console.log('Ratio:', ratio);
             console.log('Duration Factor:', durationFactor);
-            console.log('Base calculation: (capacity^2 * 100 * ratio^2)^0.45 =', Math.pow(Math.pow(capacity, 2) * 100 * Math.pow(ratio, 2), 0.45));
+            console.log('r (proportion):', r);
+            console.log('capacity * r =', capacity * r);
+            console.log('(capacity * r)^2 =', Math.pow(capacity * r, 2));
+            console.log('ratio^2 =', Math.pow(ratio, 2));
+            console.log('Base calculation: (capacity*r)^2 * 100 * ratio^2 =', Math.pow(capacity * r, 2) * 100 * Math.pow(ratio, 2));
+            console.log('Power 0.45 of above =', Math.pow(Math.pow(capacity * r, 2) * 100 * Math.pow(ratio, 2), 0.45));
             console.log('Base duration (seconds):', baseDuration);
             console.log('Final duration (seconds):', duration);
             console.log('Final duration (hours):', durationHours);
             console.log('Final duration (formatted):', utils.formatTime(durationHours));
+            console.log('Expected: 51 minutes (3060 seconds)');
+            console.log('Actual: ', duration, 'seconds');
+            console.log('Ratio actual/expected:', duration / 3060);
 
             // Resources: capacity * ratio (total), then split into 3 types
             const totalResources = capacity * ratio;
@@ -922,7 +930,7 @@
             console.log(`=== TROOP INPUT DEBUG for ${unit} ===`);
             console.log('Form element:', form);
 
-            // Try multiple input patterns
+            // First try within the form
             const inputSelectors = [
                 `input[name="${unit}"]`,
                 `input[name*="${unit}"]`,
@@ -931,7 +939,7 @@
                 `input[data-unit="${unit}"]`
             ];
 
-            console.log('Trying input selectors:', inputSelectors);
+            console.log('Trying input selectors within form:', inputSelectors);
 
             for (const selector of inputSelectors) {
                 try {
@@ -939,13 +947,6 @@
                     console.log(`Selector "${selector}" result:`, input);
                     if (input) {
                         console.log(`✓ Found input for ${unit} using selector: ${selector}`);
-                        console.log('Input details:', {
-                            name: input.name,
-                            id: input.id,
-                            className: input.className,
-                            value: input.value,
-                            type: input.type
-                        });
                         return input;
                     }
                 } catch (e) {
@@ -964,6 +965,54 @@
                     type: input.type,
                     placeholder: input.placeholder
                 });
+            });
+
+            // Try searching the entire page for inputs related to this unit
+            console.log('Searching entire page for inputs...');
+            const pageInputSelectors = [
+                `input[name="${unit}"]`,
+                `input[name*="${unit}"]`,
+                `input[id*="${unit}"]`,
+                `input[class*="${unit}"]`,
+                `input[data-unit="${unit}"]`,
+                `input[placeholder*="${unit}"]`
+            ];
+
+            for (const selector of pageInputSelectors) {
+                try {
+                    const input = document.querySelector(selector);
+                    console.log(`Page selector "${selector}" result:`, input);
+                    if (input) {
+                        console.log(`✓ Found input for ${unit} on page using selector: ${selector}`);
+                        console.log('Input details:', {
+                            name: input.name,
+                            id: input.id,
+                            className: input.className,
+                            value: input.value,
+                            type: input.type,
+                            parentElement: input.parentElement.className
+                        });
+                        return input;
+                    }
+                } catch (e) {
+                    console.log(`Error with page selector "${selector}":`, e);
+                }
+            }
+
+            // Show all inputs on the page
+            const allPageInputs = document.querySelectorAll('input');
+            console.log(`All inputs on page (${allPageInputs.length} found):`);
+            allPageInputs.forEach((input, i) => {
+                if (i < 20) { // Limit to first 20 to avoid spam
+                    console.log(`Page Input ${i}:`, {
+                        name: input.name,
+                        id: input.id,
+                        className: input.className,
+                        type: input.type,
+                        placeholder: input.placeholder,
+                        parentClassName: input.parentElement?.className
+                    });
+                }
             });
 
             console.log(`❌ No input found for unit: ${unit}`);
