@@ -92,11 +92,25 @@
         
         getTroops() {
             const troops = {};
+            // First try the original selector
             document.querySelectorAll(CONFIG.SELECTORS.unitsDisplay).forEach(el => {
                 const unit = el.getAttribute('data-unit');
                 const count = parseInt(el.textContent.replace(/[.,]/g, '')) || 0;
                 if (unit) troops[unit] = count;
             });
+
+            // If no troops found, try the squad-village-required elements
+            if (Object.keys(troops).length === 0) {
+                document.querySelectorAll('.units-entry-all.squad-village-required').forEach(el => {
+                    const unit = el.getAttribute('data-unit');
+                    // Extract number from text like "(10)"
+                    const text = el.textContent.trim();
+                    const match = text.match(/\((\d+)\)/);
+                    const count = match ? parseInt(match[1]) : 0;
+                    if (unit) troops[unit] = count;
+                });
+            }
+
             return troops;
         },
         
