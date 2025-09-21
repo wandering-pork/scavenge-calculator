@@ -91,37 +91,23 @@
         },
         
         getTroops() {
-            console.log('=== TROOPS DETECTION DEBUG ===');
             const troops = {};
-
             // First try the original selector
-            console.log('Trying original selector:', CONFIG.SELECTORS.unitsDisplay);
-            const originalElements = document.querySelectorAll(CONFIG.SELECTORS.unitsDisplay);
-            console.log('Original elements found:', originalElements.length);
-
-            originalElements.forEach(el => {
+            document.querySelectorAll(CONFIG.SELECTORS.unitsDisplay).forEach(el => {
                 const unit = el.getAttribute('data-unit');
                 const count = parseInt(el.textContent.replace(/[.,]/g, '')) || 0;
-                console.log(`Original - Unit: ${unit}, Text: "${el.textContent}", Count: ${count}`);
                 if (unit) troops[unit] = count;
             });
 
             // Try the squad-village-required elements
-            console.log('Trying squad-village-required selector...');
-            const squadElements = document.querySelectorAll('.units-entry-all.squad-village-required');
-            console.log('Squad elements found:', squadElements.length);
-
-            squadElements.forEach(el => {
+            document.querySelectorAll('.units-entry-all.squad-village-required').forEach(el => {
                 const unit = el.getAttribute('data-unit');
                 const text = el.textContent.trim();
                 const match = text.match(/\((\d+)\)/);
                 const count = match ? parseInt(match[1]) : 0;
-                console.log(`Squad - Unit: ${unit}, Text: "${text}", Match: ${match}, Count: ${count}`);
                 if (unit && count > 0) troops[unit] = count;
             });
 
-            console.log('Final troops object:', troops);
-            console.log('================================');
             return troops;
         },
         
@@ -1025,16 +1011,11 @@
     window.sendScavenge = (level, troops) => ScavengeSender.send(level, troops);
 
     window.setAllTroops = (unit, maxAmount) => {
-        console.log('setAllTroops called with:', unit, maxAmount);
         const input = document.getElementById(`troop-${unit}`);
-        console.log('Found input:', input);
         if (input) {
             input.value = maxAmount;
-            console.log('Set value to:', maxAmount);
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
-        } else {
-            console.error('Could not find input for unit:', unit);
         }
     };
 
