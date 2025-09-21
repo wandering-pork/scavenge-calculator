@@ -163,24 +163,76 @@
         },
         
         _optimizeForEfficiency(totalCapacity, scavenges, durationFactor, maxDuration = null) {
-            // Prioritize highest efficiency (resources per hour)
-            const distribution = new Array(scavenges.length).fill(0);
-            let remaining = totalCapacity;
-            
-            // Start from highest efficiency (level 4) and work down
-            for (let i = scavenges.length - 1; i >= 0 && remaining > 0; i--) {
-                let allocation = Math.min(remaining, remaining / (scavenges.length - i));
-                
-                // Apply time constraint if specified
-                if (maxDuration) {
-                    allocation = this._limitByDuration(allocation, scavenges[i].ratio, durationFactor, maxDuration);
-                }
-                
-                distribution[i] = allocation;
-                remaining -= allocation;
+            // Iterative optimization to maximize total resources per hour
+            let bestDistribution = new Array(scavenges.length).fill(0);
+            let bestEfficiency = 0;
+
+            // Start with equal distribution
+            const baseAllocation = totalCapacity / scavenges.length;
+            let currentDistribution = scavenges.map(() => baseAllocation);
+
+            // Apply duration constraints to initial distribution
+            if (maxDuration) {
+                currentDistribution = currentDistribution.map((capacity, i) =>
+                    this._limitByDuration(capacity, scavenges[i].ratio, durationFactor, maxDuration)
+                );
             }
-            
-            return distribution;
+
+            // Iterative optimization: try moving capacity between scavenges
+            const maxIterations = 20;
+            const stepSize = totalCapacity * 0.05; // 5% of total capacity per step
+
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                let improved = false;
+
+                // Try moving capacity from each scavenge to every other scavenge
+                for (let from = 0; from < scavenges.length; from++) {
+                    for (let to = 0; to < scavenges.length; to++) {
+                        if (from === to || currentDistribution[from] < stepSize) continue;
+
+                        // Try moving capacity
+                        const testDistribution = [...currentDistribution];
+                        testDistribution[from] -= stepSize;
+                        testDistribution[to] += stepSize;
+
+                        // Apply duration constraints
+                        if (maxDuration) {
+                            const constrainedTo = this._limitByDuration(
+                                testDistribution[to],
+                                scavenges[to].ratio,
+                                durationFactor,
+                                maxDuration
+                            );
+
+                            if (constrainedTo < testDistribution[to]) {
+                                const excess = testDistribution[to] - constrainedTo;
+                                testDistribution[to] = constrainedTo;
+                                testDistribution[from] += excess;
+                            }
+                        }
+
+                        // Calculate total efficiency (resources per hour) for this distribution
+                        const totalEfficiency = testDistribution.reduce((total, capacity, i) => {
+                            if (capacity <= 0) return total;
+                            const efficiency = this._calculateEfficiency(capacity, scavenges[i].ratio, durationFactor);
+                            return total + (efficiency ? efficiency.efficiency : 0);
+                        }, 0);
+
+                        // Keep this distribution if it's better
+                        if (totalEfficiency > bestEfficiency) {
+                            bestEfficiency = totalEfficiency;
+                            bestDistribution = [...testDistribution];
+                            currentDistribution = [...testDistribution];
+                            improved = true;
+                        }
+                    }
+                }
+
+                // If no improvement found, we've reached a local optimum
+                if (!improved) break;
+            }
+
+            return bestDistribution.length > 0 ? bestDistribution : currentDistribution;
         },
         
         _optimizeForMaxResources(totalCapacity, scavenges, durationFactor, maxDuration = null) {
@@ -258,32 +310,54 @@
         },
         
         _optimizeForEqualDuration(totalCapacity, scavenges, durationFactor, maxDuration = null) {
-            // Make all scavenges finish at approximately the same time
+            // Use fixed ratios from reference implementation: RT 1: 7.5/13, RT 2: 3/13, RT 3: 1.5/13, RT 4: 1/13
+            const fixedRatios = [7.5/13, 3/13, 1.5/13, 1/13]; // Level 1, 2, 3, 4
             const distribution = new Array(scavenges.length).fill(0);
-            
-            // Use provided max duration or default to 2 hours
-            const targetDuration = maxDuration || 2;
-            
+
+            // Map scavenge levels to ratios
             scavenges.forEach((scavenge, i) => {
-                // Solve for capacity given target duration
-                const baseDuration = (targetDuration * 3600) / durationFactor - 1800;
-                if (baseDuration > 0) {
-                    // baseDuration = (capacity^2 * 100 * ratio^2)^0.45
-                    // capacity = sqrt((baseDuration)^(1/0.45) / (100 * ratio^2))
-                    const capacity = Math.sqrt(Math.pow(baseDuration, 1/0.45) / (100 * Math.pow(scavenge.ratio, 2)));
-                    distribution[i] = Math.min(capacity, totalCapacity / scavenges.length);
+                const levelIndex = scavenge.level - 1; // Convert to 0-based index
+                if (levelIndex >= 0 && levelIndex < fixedRatios.length) {
+                    let allocation = totalCapacity * fixedRatios[levelIndex];
+
+                    // Apply duration constraints if specified
+                    if (maxDuration) {
+                        allocation = this._limitByDuration(allocation, scavenge.ratio, durationFactor, maxDuration);
+                    }
+
+                    distribution[i] = allocation;
                 }
             });
-            
-            // Normalize to total capacity
-            const totalAllocated = distribution.reduce((sum, cap) => sum + cap, 0);
-            if (totalAllocated > totalCapacity) {
-                const scale = totalCapacity / totalAllocated;
-                for (let i = 0; i < distribution.length; i++) {
-                    distribution[i] *= scale;
+
+            // If duration constraints were applied, redistribute any remaining capacity
+            const allocatedCapacity = distribution.reduce((sum, cap) => sum + cap, 0);
+            const remainingCapacity = totalCapacity - allocatedCapacity;
+
+            if (remainingCapacity > 0) {
+                // Distribute remaining capacity proportionally
+                const totalRatio = scavenges.reduce((sum, scavenge, i) => {
+                    const levelIndex = scavenge.level - 1;
+                    return sum + (levelIndex >= 0 && levelIndex < fixedRatios.length ? fixedRatios[levelIndex] : 0);
+                }, 0);
+
+                if (totalRatio > 0) {
+                    scavenges.forEach((scavenge, i) => {
+                        const levelIndex = scavenge.level - 1;
+                        if (levelIndex >= 0 && levelIndex < fixedRatios.length) {
+                            const additionalCapacity = remainingCapacity * (fixedRatios[levelIndex] / totalRatio);
+                            let newAllocation = distribution[i] + additionalCapacity;
+
+                            // Apply duration constraints to additional capacity
+                            if (maxDuration) {
+                                newAllocation = this._limitByDuration(newAllocation, scavenge.ratio, durationFactor, maxDuration);
+                            }
+
+                            distribution[i] = newAllocation;
+                        }
+                    });
                 }
             }
-            
+
             return distribution;
         },
         
