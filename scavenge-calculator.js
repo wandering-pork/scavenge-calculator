@@ -819,7 +819,7 @@
             try {
                 const form = this._findScavengeForm(level);
                 if (!form) {
-                    alert(`Cannot find scavenge form for level ${level}. Please check the page structure.`);
+                    console.error(`Cannot find scavenge form for level ${level}. Please check the page structure.`);
                     return;
                 }
 
@@ -838,7 +838,7 @@
                 });
 
                 if (populatedCount === 0) {
-                    alert(`Could not find troop input fields in level ${level} form.`);
+                    console.error(`Could not find troop input fields in level ${level} form.`);
                     return;
                 }
 
@@ -851,15 +851,11 @@
                     const startButton = this._findStartButton(form);
                     if (startButton) {
                         startButton.click();
-                        alert(`Level ${level} scavenge started automatically!`);
-                    } else {
-                        alert(`Level ${level} scavenge populated with ${populatedCount} troop types! Click "Start scavenging" to confirm.`);
                     }
                     form.style.backgroundColor = '';
                 }, 500);
 
             } catch (error) {
-                alert(`Error: ${error.message}`);
                 console.error('ScavengeSender error:', error);
             }
         },
